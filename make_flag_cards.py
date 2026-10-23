@@ -211,7 +211,6 @@ MAP_CACHE_PX = 512
 BACK_BAND_MM = 5.2
 BACK_TOP_MM = 5.8
 BACK_GAP_MM = 2.0
-ARROW_MM = 3.2
 PT_TO_MM = 25.4 / 72.0
 INK = (0.10, 0.10, 0.12)
 MUTED = (0.34, 0.34, 0.38)
@@ -431,7 +430,7 @@ def back_geometry(card_w: float, card_h: float, padding: float,
 
 
 def back_content(card, card_w, card_h, padding, measure, show_code, show_continent,
-                 map_path, show_arrow=True, show_capital=True):
+                 map_path, show_capital=True):
     """Return drawing primitives in card-local mm (y measured from the top)."""
     mm_to_pt = 72.0 / 25.4
     cont_key = card.continent if show_continent else None
@@ -441,27 +440,18 @@ def back_content(card, card_w, card_h, padding, measure, show_code, show_contine
     g = back_geometry(card_w, card_h, padding,
                       has_map=map_path is not None,
                       has_band=bool(cont_key),
-                      has_top=show_arrow or show_code)
+                      has_top=show_code)
     items: list[tuple] = []
 
     if cont_key:
         items.append(("rect", g["ix"], g["band_y"], g["iw"], g["band_h"], cont_color))
 
-    if show_arrow or show_code:
+    if show_code:
         top_y, top_h = g["iy"], g["top_h"]
-        if show_arrow:
-            ax = g["ix"]
-            ay = top_y + (top_h - ARROW_MM) / 2.0
-            items.append(("arrow", ax, ay, ARROW_MM, ARROW_MM, (0.36, 0.36, 0.40)))
-            size = min(4.6, max(3.2, ARROW_MM * 1.3))
-            items.append(("text", "góra flagi", ax + ARROW_MM + 0.9,
-                          top_y + top_h / 2.0 + size * PT_TO_MM * 0.34,
-                          size, LABEL, False, "left"))
-        if show_code:
-            size = min(6.5, max(4.0, card_h * 0.115))
-            items.append(("text", card.code.upper(), g["ix"] + g["iw"],
-                          top_y + top_h / 2.0 + size * PT_TO_MM * 0.34,
-                          size, LABEL, True, "right"))
+        size = min(6.5, max(4.0, card_h * 0.115))
+        items.append(("text", card.code.upper(), g["ix"] + g["iw"],
+                      top_y + top_h / 2.0 + size * PT_TO_MM * 0.34,
+                      size, LABEL, True, "right"))
 
     if map_path is not None:
         mx, my, mw, mh = g["map"]
@@ -501,19 +491,6 @@ def back_content(card, card_w, card_h, padding, measure, show_code, show_contine
                       g["band_y"] + g["band_h"] / 2.0 + size * PT_TO_MM * 0.34,
                       size, (1.0, 1.0, 1.0), True, "center"))
     return items
-
-
-def arrow_polygon(x: float, y: float, w: float, h: float):
-    """Up arrow inside the box (x, y, w, h), y measured from the top."""
-    return [
-        (x + 0.34 * w, y + h),
-        (x + 0.34 * w, y + 0.45 * h),
-        (x, y + 0.45 * h),
-        (x + 0.5 * w, y),
-        (x + w, y + 0.45 * h),
-        (x + 0.66 * w, y + 0.45 * h),
-        (x + 0.66 * w, y + h),
-    ]
 
 
 # --------------------------------------------------------------------------- #
@@ -805,16 +782,6 @@ def _draw_item_pdf(c, item, x_pt, y_pt, card_h_mm, font_name, bold_name):
         _, path, x, y, w, h = item
         c.drawImage(ImageReader(str(path)), x_pt + x * MM, y_pt + (card_h_mm - y - h) * MM,
                     width=w * MM, height=h * MM, mask="auto")
-    elif kind == "arrow":
-        _, x, y, w, h, rgb = item
-        c.setFillColorRGB(*rgb)
-        pts = arrow_polygon(x, y, w, h)
-        p = c.beginPath()
-        p.moveTo(x_pt + pts[0][0] * MM, y_pt + (card_h_mm - pts[0][1]) * MM)
-        for px, py in pts[1:]:
-            p.lineTo(x_pt + px * MM, y_pt + (card_h_mm - py) * MM)
-        p.close()
-        c.drawPath(p, stroke=0, fill=1)
 
 
 def _draw_item_png(img, draw, item, px_per_mm, dpi, font_regular, font_bold):
@@ -846,10 +813,6 @@ def _draw_item_png(img, draw, item, px_per_mm, dpi, font_regular, font_bold):
         with Image.open(path) as src:
             img.paste(src.convert("RGB").resize((tw, th), Image.LANCZOS),
                       (int(round(x * px_per_mm)), int(round(y * px_per_mm))))
-    elif kind == "arrow":
-        _, x, y, w, h, rgb = item
-        pts = [(px * px_per_mm, py * px_per_mm) for px, py in arrow_polygon(x, y, w, h)]
-        draw.polygon(pts, fill=tuple(int(round(v * 255)) for v in rgb))
 
 
 # --------------------------------------------------------------------------- #
@@ -872,7 +835,6 @@ def make_pdf(
     map_dir: Path | None = None,
     geojson_path: Path | None = None,
     refresh_maps: bool = False,
-    show_arrow: bool = True,
     show_capital: bool = True,
 ) -> int:
     from reportlab.lib.utils import ImageReader
@@ -941,7 +903,7 @@ def make_pdf(
                                           map_dir, geojson_path, refresh_maps) if map_dir else None
                 items = back_content(card, grid.card_w, grid.card_h, padding, measure,
                                      show_code, show_continent, map_path,
-                                     show_arrow=show_arrow, show_capital=show_capital)
+                                     show_capital=show_capital)
                 for item in items:
                     _draw_item_pdf(c, item, x_pt, y_pt, grid.card_h, font_name, bold_name)
         c.showPage()
@@ -970,7 +932,6 @@ def make_card_pngs(
     map_dir: Path | None = None,
     geojson_path: Path | None = None,
     refresh_maps: bool = False,
-    show_arrow: bool = True,
     show_capital: bool = True,
 ) -> None:
     if Image is None:
@@ -1019,7 +980,7 @@ def make_card_pngs(
                                           map_dir, geojson_path, refresh_maps) if map_dir else None
                 items = back_content(card, card_w_mm, card_h_mm, padding, measure,
                                      show_code, show_continent, map_path,
-                                     show_arrow=show_arrow, show_capital=show_capital)
+                                     show_capital=show_capital)
                 for item in items:
                     _draw_item_png(img, draw, item, px_per_mm, dpi, font_regular, font_bold)
 
@@ -1112,7 +1073,6 @@ def main() -> int:
     parser.add_argument("--show-code", action="store_true", help="Drukuj kod ISO na tyle karty")
     parser.add_argument("--no-map", action="store_true", help="Nie drukuj mapki lokalizacyjnej na tyle karty")
     parser.add_argument("--no-capital", action="store_true", help="Nie drukuj stolicy na tyle karty")
-    parser.add_argument("--no-arrow", action="store_true", help="Nie rysuj strzałki orientacji flagi")
     parser.add_argument("--map-geo", default=None, help="Ścieżka do GeoJSON Natural Earth (domyślnie w katalogu skryptu)")
     parser.add_argument("--refresh-maps", action="store_true", help="Przelicz mapki od nowa (ignoruj cache)")
     parser.add_argument("--no-continent", action="store_true", help="Nie drukuj kontynentu na tyle karty")
@@ -1127,7 +1087,6 @@ def main() -> int:
     cache_dir = Path(args.cache_dir) if args.cache_dir else out_dir / ".flag-cache"
     geojson_path = Path(args.map_geo) if args.map_geo else Path(__file__).parent / MAP_GEODATA
     map_dir = None if args.no_map else cache_dir / "maps"
-    show_arrow = not args.no_arrow
     show_capital = not args.no_capital
 
     font_regular = find_font(FONT_CANDIDATES_REGULAR)
@@ -1192,7 +1151,7 @@ def main() -> int:
             args.padding, show_code, show_continent, draw_borders, font_regular, font_bold,
             f"Karty flag {paper} - przód (flagi)",
             map_dir=map_dir, geojson_path=geojson_path, refresh_maps=args.refresh_maps,
-            show_arrow=show_arrow, show_capital=show_capital,
+            show_capital=show_capital,
         )
 
         variants = []
@@ -1214,7 +1173,7 @@ def main() -> int:
                 args.padding, show_code, show_continent, draw_borders, font_regular, font_bold,
                 f"Karty flag {paper} - tył (nazwy), {label}",
                 map_dir=map_dir, geojson_path=geojson_path, refresh_maps=args.refresh_maps,
-                show_arrow=show_arrow, show_capital=show_capital,
+                show_capital=show_capital,
             )
             print(f"  → {out_dir / f'karty_{paper}_przod.pdf'}", file=sys.stderr)
             print(f"  → {out_dir / f'karty_{paper}_tyl_{label}.pdf'}", file=sys.stderr)
@@ -1235,7 +1194,7 @@ def main() -> int:
             png_grid.cards, flag_paths, png_dir, card_w, card_h, args.dpi,
             args.padding, show_code, show_continent, font_regular, font_bold,
             map_dir=map_dir, geojson_path=geojson_path, refresh_maps=args.refresh_maps,
-            show_arrow=show_arrow, show_capital=show_capital,
+            show_capital=show_capital,
         )
         print(f"  → {png_dir}/", file=sys.stderr)
 
