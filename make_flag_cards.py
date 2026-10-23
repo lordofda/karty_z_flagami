@@ -216,7 +216,8 @@ INK = (0.10, 0.10, 0.12)
 MUTED = (0.34, 0.34, 0.38)
 LABEL = (0.62, 0.62, 0.65)
 SEA_RGB = (232, 241, 249)
-NEIGHBOUR_RGB = (217, 222, 228)
+NEIGHBOUR_RGB = (213, 219, 226)
+NEIGHBOUR_BORDER_RGB = (150, 160, 173)
 MAP_BORDER_RGB = (255, 255, 255)
 
 _MAP_POLYS = {}
@@ -278,7 +279,8 @@ def _load_map_polys(geojson_path: Path) -> dict[str, list]:
 
 
 def render_locator_map(code: str, fill_rgb, geojson_path: Path, px: int = 512):
-    """Small locator map: country in `fill_rgb`, neighbours in light grey."""
+    """Small locator map: country in `fill_rgb`, neighbours in light grey
+    with a darker outline so landlocked countries still read clearly."""
     if Image is None:
         return None
     polys_by = _load_map_polys(geojson_path)
@@ -326,14 +328,14 @@ def render_locator_map(code: str, fill_rgb, geojson_path: Path, px: int = 512):
     img = Image.new("RGB", (px, px), SEA_RGB)
     draw = ImageDraw.Draw(img)
 
-    def paint(poly, shift, fill_col, width):
+    def paint(poly, shift, fill_col, border_col, width):
         pts = [P(lon + shift, lat) for lon, lat in poly[0]]
         if len(pts) >= 3:
             draw.polygon(pts, fill=fill_col)
             if width:
-                draw.line(pts + [pts[0]], fill=MAP_BORDER_RGB, width=width)
+                draw.line(pts + [pts[0]], fill=border_col, width=width)
 
-    border_w = max(1, px // 320)
+    border_w = max(2, px // 128)
     for other, other_polys in polys_by.items():
         if other == code:
             continue
@@ -344,7 +346,7 @@ def render_locator_map(code: str, fill_rgb, geojson_path: Path, px: int = 512):
                 continue
             if _merc_y(bb[3]) < vy1 - span or _merc_y(bb[1]) > vy1 + span:
                 continue
-            paint(poly, shift, NEIGHBOUR_RGB, border_w)
+            paint(poly, shift, NEIGHBOUR_RGB, NEIGHBOUR_BORDER_RGB, border_w)
 
     target_pts = []
     for poly, shift in kept:
@@ -394,7 +396,7 @@ def ensure_map_png(code: str, fill_rgb, map_dir: Path | None, geojson_path: Path
     if map_dir is None:
         return None
     hexc = "".join("%02x" % int(round(c * 255)) for c in fill_rgb)
-    path = map_dir / ("%s-%s-v3.png" % (code, hexc))
+    path = map_dir / ("%s-%s-v4.png" % (code, hexc))
     if path.exists() and not refresh:
         return path
     img = render_locator_map(code, fill_rgb, geojson_path, MAP_CACHE_PX)
