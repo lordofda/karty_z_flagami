@@ -1,0 +1,196 @@
+arkusz,wiersz,kolumna,kod,nazwa,kontynent
+1,1,1,af,Afganistan,Azja
+1,1,2,al,Albania,Europa
+1,1,3,dz,Algieria,Afryka
+1,1,4,ad,Andora,Europa
+1,2,1,ao,Angola,Afryka
+1,2,2,ag,Antigua i Barbuda,Ameryka Północna
+1,2,3,sa,Arabia Saudyjska,Azja
+1,2,4,ar,Argentyna,Ameryka Południowa
+1,3,1,am,Armenia,Azja
+1,3,2,au,Australia,Australia i Oceania
+1,3,3,at,Austria,Europa
+1,3,4,az,Azerbejdżan,Azja
+1,4,1,bs,Bahamy,Ameryka Północna
+1,4,2,bh,Bahrajn,Azja
+1,4,3,bd,Bangladesz,Azja
+1,4,4,bb,Barbados,Ameryka Północna
+1,5,1,be,Belgia,Europa
+1,5,2,bz,Belize,Ameryka Północna
+1,5,3,bj,Benin,Afryka
+1,5,4,bt,Bhutan,Azja
+1,6,1,by,Białoruś,Europa
+1,6,2,bo,Boliwia,Ameryka Południowa
+1,6,3,ba,Bośnia i Hercegowina,Europa
+1,6,4,bw,Botswana,Afryka
+1,7,1,br,Brazylia,Ameryka Południowa
+1,7,2,bn,Brunei,Azja
+1,7,3,bg,Bułgaria,Europa
+1,7,4,bf,Burkina Faso,Afryka
+1,8,1,bi,Burundi,Afryka
+1,8,2,cl,Chile,Ameryka Południowa
+1,8,3,cn,Chiny,Azja
+1,8,4,hr,Chorwacja,Europa
+1,9,1,cy,Cypr,Europa
+1,9,2,td,Czad,Afryka
+1,9,3,me,Czarnogóra,Europa
+1,9,4,cz,Czechy,Europa
+1,10,1,dk,Dania,Europa
+1,10,2,cd,Demokratyczna Republika Konga,Afryka
+1,10,3,dm,Dominika,Ameryka Północna
+1,10,4,do,Dominikana,Ameryka Północna
+2,1,1,dj,Dżibuti,Afryka
+2,1,2,eg,Egipt,Afryka
+2,1,3,ec,Ekwador,Ameryka Południowa
+2,1,4,er,Erytrea,Afryka
+2,2,1,ee,Estonia,Europa
+2,2,2,et,Etiopia,Afryka
+2,2,3,fj,Fidżi,Australia i Oceania
+2,2,4,ph,Filipiny,Azja
+2,3,1,fi,Finlandia,Europa
+2,3,2,fr,Francja,Europa
+2,3,3,ga,Gabon,Afryka
+2,3,4,gm,Gambia,Afryka
+2,4,1,gh,Ghana,Afryka
+2,4,2,gr,Grecja,Europa
+2,4,3,gd,Grenada,Ameryka Północna
+2,4,4,ge,Gruzja,Azja
+2,5,1,gy,Gujana,Ameryka Południowa
+2,5,2,gt,Gwatemala,Ameryka Północna
+2,5,3,gn,Gwinea,Afryka
+2,5,4,gw,Gwinea Bissau,Afryka
+2,6,1,gq,Gwinea Równikowa,Afryka
+2,6,2,ht,Haiti,Ameryka Północna
+2,6,3,es,Hiszpania,Europa
+2,6,4,nl,Holandia,Europa
+2,7,1,in,Indie,Azja
+2,7,2,id,Indonezja,Australia i Oceania
+2,7,3,iq,Irak,Azja
+2,7,4,ir,Iran,Azja
+2,8,1,ie,Irlandia,Europa
+2,8,2,is,Islandia,Europa
+2,8,3,il,Izrael,Azja
+2,8,4,jm,Jamajka,Ameryka Północna
+2,9,1,jp,Japonia,Azja
+2,9,2,ye,Jemen,Azja
+2,9,3,jo,Jordania,Azja
+2,9,4,kh,Kambodża,Azja
+2,10,1,cm,Kamerun,Afryka
+2,10,2,ca,Kanada,Ameryka Północna
+2,10,3,qa,Katar,Azja
+2,10,4,kz,Kazachstan,Azja
+3,1,1,ke,Kenia,Afryka
+3,1,2,kg,Kirgistan,Azja
+3,1,3,ki,Kiribati,Australia i Oceania
+3,1,4,co,Kolumbia,Ameryka Południowa
+3,2,1,km,Komory,Afryka
+3,2,2,cg,Kongo,Afryka
+3,2,3,kr,Korea Południowa,Azja
+3,2,4,kp,Korea Północna,Azja
+3,3,1,cr,Kostaryka,Ameryka Północna
+3,3,2,cu,Kuba,Ameryka Północna
+3,3,3,kw,Kuwejt,Azja
+3,3,4,la,Laos,Azja
+3,4,1,ls,Lesotho,Afryka
+3,4,2,lb,Liban,Azja
+3,4,3,lr,Liberia,Afryka
+3,4,4,ly,Libia,Afryka
+3,5,1,li,Liechtenstein,Europa
+3,5,2,lt,Litwa,Europa
+3,5,3,lu,Luksemburg,Europa
+3,5,4,lv,Łotwa,Europa
+3,6,1,mk,Macedonia Północna,Europa
+3,6,2,mg,Madagaskar,Afryka
+3,6,3,mw,Malawi,Afryka
+3,6,4,mv,Malediwy,Azja
+3,7,1,my,Malezja,Azja
+3,7,2,ml,Mali,Afryka
+3,7,3,mt,Malta,Europa
+3,7,4,ma,Maroko,Afryka
+3,8,1,mr,Mauretania,Afryka
+3,8,2,mu,Mauritius,Afryka
+3,8,3,mx,Meksyk,Ameryka Północna
+3,8,4,fm,Mikronezja,Australia i Oceania
+3,9,1,mm,Mjanma,Azja
+3,9,2,md,Mołdawia,Europa
+3,9,3,mc,Monako,Europa
+3,9,4,mn,Mongolia,Azja
+3,10,1,ms,Montserrat,Ameryka Północna
+3,10,2,mz,Mozambik,Afryka
+3,10,3,na,Namibia,Afryka
+3,10,4,nr,Nauru,Australia i Oceania
+4,1,1,np,Nepal,Azja
+4,1,2,de,Niemcy,Europa
+4,1,3,ne,Niger,Afryka
+4,1,4,ng,Nigeria,Afryka
+4,2,1,ni,Nikaragua,Ameryka Północna
+4,2,2,no,Norwegia,Europa
+4,2,3,nz,Nowa Zelandia,Australia i Oceania
+4,2,4,om,Oman,Azja
+4,3,1,pk,Pakistan,Azja
+4,3,2,pw,Palau,Australia i Oceania
+4,3,3,ps,Palestyna,Azja
+4,3,4,pa,Panama,Ameryka Północna
+4,4,1,pg,Papua-Nowa Gwinea,Australia i Oceania
+4,4,2,py,Paragwaj,Ameryka Południowa
+4,4,3,pe,Peru,Ameryka Południowa
+4,4,4,pl,Polska,Europa
+4,5,1,za,Południowa Afryka,Afryka
+4,5,2,pt,Portugalia,Europa
+4,5,3,cf,Republika Środkowoafrykańska,Afryka
+4,5,4,cv,Republika Zielonego Przylądka,Afryka
+4,6,1,ru,Rosja,Azja
+4,6,2,ro,Rumunia,Europa
+4,6,3,rw,Rwanda,Afryka
+4,6,4,kn,Saint Kitts i Nevis,Ameryka Północna
+4,7,1,lc,Saint Lucia,Ameryka Północna
+4,7,2,vc,Saint Vincent i Grenadyny,Ameryka Północna
+4,7,3,sv,Salwador,Ameryka Północna
+4,7,4,ws,Samoa,Australia i Oceania
+4,8,1,sm,San Marino,Europa
+4,8,2,sn,Senegal,Afryka
+4,8,3,rs,Serbia,Europa
+4,8,4,sc,Seszele,Afryka
+4,9,1,sl,Sierra Leone,Afryka
+4,9,2,sg,Singapur,Azja
+4,9,3,sk,Słowacja,Europa
+4,9,4,si,Słowenia,Europa
+4,10,1,so,Somalia,Afryka
+4,10,2,lk,Sri Lanka,Azja
+4,10,3,us,Stany Zjednoczone,Ameryka Północna
+4,10,4,sz,Suazi,Afryka
+5,1,1,sd,Sudan,Afryka
+5,1,2,ss,Sudan Południowy,Afryka
+5,1,3,sr,Surinam,Ameryka Południowa
+5,1,4,sy,Syria,Azja
+5,2,1,ch,Szwajcaria,Europa
+5,2,2,se,Szwecja,Europa
+5,2,3,tj,Tadżykistan,Azja
+5,2,4,th,Tajlandia,Azja
+5,3,1,tz,Tanzania,Afryka
+5,3,2,tl,Timor Wschodni,Azja
+5,3,3,tg,Togo,Afryka
+5,3,4,to,Tonga,Australia i Oceania
+5,4,1,tt,Trynidad i Tobago,Ameryka Południowa
+5,4,2,tn,Tunezja,Afryka
+5,4,3,tr,Turcja,Azja
+5,4,4,tm,Turkmenistan,Azja
+5,5,1,tv,Tuvalu,Australia i Oceania
+5,5,2,ug,Uganda,Afryka
+5,5,3,ua,Ukraina,Europa
+5,5,4,uy,Urugwaj,Ameryka Południowa
+5,6,1,uz,Uzbekistan,Azja
+5,6,2,vu,Vanuatu,Australia i Oceania
+5,6,3,va,Watykan,Europa
+5,6,4,ve,Wenezuela,Ameryka Południowa
+5,7,1,hu,Węgry,Europa
+5,7,2,gb,Wielka Brytania (Zjednoczone Królestwo),Europa
+5,7,3,vn,Wietnam,Azja
+5,7,4,it,Włochy,Europa
+5,8,1,ci,Wybrzeże Kości Słoniowej,Afryka
+5,8,2,mh,Wyspy Marshalla,Australia i Oceania
+5,8,3,sb,Wyspy Salomona,Australia i Oceania
+5,8,4,st,Wyspy Świętego Tomasza i Książęca,Afryka
+5,9,1,zm,Zambia,Afryka
+5,9,2,zw,Zimbabwe,Afryka
+5,9,3,ae,Zjednoczone Emiraty Arabskie,Azja
