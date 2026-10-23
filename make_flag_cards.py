@@ -24,18 +24,33 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import os
+import re
 import sys
+import time
+import urllib.error
+import urllib.parse
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+from io import BytesIO
 from pathlib import Path
+
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except ImportError:  # PNG output / maps need Pillow, PDF does not
+    Image = ImageDraw = ImageFont = None  # type: ignore[assignment]
 
 # --------------------------------------------------------------------------- #
 # Constants
 # --------------------------------------------------------------------------- #
 
 CDN = "https://flagcdn.com"
+MAP_GEO_URL = (
+    "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/"
+    "geojson/ne_50m_admin_0_countries.geojson"
+)
 MM = 72.0 / 25.4  # millimetres -> PDF points
 
 PAPER_SIZES_MM = {
@@ -92,6 +107,55 @@ CONTINENT_STYLE = {
     "inne": ("Antarktyka i pozostałe", (0.47, 0.11, 0.23)),           # bordowy
 }
 
+# Stolica (po polsku) - źródło: flagi-panstw.pl (strony krajów)
+CAPITALS_BY_CODE = {
+    "ad": "Andora", "ae": "Abu Zabi", "af": "Kabul", "ag": "St. John’s", "ai": "The Valley", "al": "Tirana",
+    "am": "Erywań", "ao": "Luanda", "ar": "Buenos Aires", "as": "Pago Pago", "at": "Wiedeń", "au": "Canberra",
+    "aw": "Oranjestad", "ax": "Maarianhamina", "az": "Baku", "ba": "Sarajewo", "bb": "Bridgetown",
+    "bd": "Dhaka", "be": "Bruksela", "bf": "Wagadugu", "bg": "Sofia", "bh": "Manama", "bi": "Gitega",
+    "bj": "Porto-Novo", "bl": "Gustavia", "bm": "Hamilton", "bn": "Bandar Seri Begawan", "bo": "Sucre",
+    "br": "Brasília", "bs": "Nassau", "bt": "Thimphu", "bw": "Gaborone", "by": "Mińsk", "bz": "Belmopan",
+    "ca": "Ottawa", "cc": "Wyspa Zachodnia", "cd": "Kinszasa", "cf": "Bangi", "cg": "Brazzaville",
+    "ch": "Berno", "ci": "Jamusukro", "ck": "Avarua", "cl": "Santiago", "cm": "Jaunde", "cn": "Pekin",
+    "co": "Bogota", "cr": "San Jose", "cu": "Hawana", "cv": "Praia", "cw": "Willemstad",
+    "cx": "Flying Fish Cove", "cy": "Nikozja", "cz": "Praga", "de": "Berlin", "dj": "Dżibuti",
+    "dk": "Kopenhaga", "dm": "Roseau", "do": "Santo Domingo", "dz": "Algier", "ec": "Quito", "ee": "Tallinn",
+    "eg": "Kair", "eh": "Al-Ujun", "er": "Asmara", "es": "Madryt", "et": "Addis Abeba", "fi": "Helsinki",
+    "fj": "Suva", "fk": "Stanley", "fm": "Palikir", "fo": "Thorshavn", "fr": "Paryż", "ga": "Libreville",
+    "gb": "Londyn", "gd": "Saint George", "ge": "Tbilisi", "gf": "Kajenna", "gg": "Saint Peter Port",
+    "gh": "Akra", "gi": "Gibraltar", "gl": "Nuuk", "gm": "Bandżul", "gn": "Konakry", "gp": "Basse-Terre",
+    "gq": "Malabo", "gr": "Ateny", "gt": "Gwatemala", "gu": "Hagåtña", "gw": "Bissau", "gy": "Georgetown",
+    "hk": "Victoria", "hn": "Tegucigalpa", "hr": "Zagrzeb", "ht": "Port-au-Prince", "hu": "Budapeszt",
+    "id": "Dżakarta", "ie": "Dublin", "il": "Jerozolima", "im": "Douglas", "in": "Nowe Delhi",
+    "io": "Diego Garcia", "iq": "Bagdad", "ir": "Teheran", "is": "Reykjavík", "it": "Rzym",
+    "je": "Saint Helier", "jm": "Kingston", "jo": "Amman", "jp": "Tokio", "ke": "Nairobi", "kg": "Biszkek",
+    "kh": "Phnom Penh", "ki": "South Tarawa", "km": "Moroni", "kn": "Basseterre", "kp": "Pjongjang",
+    "kr": "Seul", "kw": "Kuwejt", "ky": "Georgetown", "kz": "Astana", "la": "Wientian", "lb": "Bejrut",
+    "lc": "Castries", "li": "Vaduz", "lk": "Kolombo", "lr": "Monrovia", "ls": "Maseru", "lt": "Wilno",
+    "lu": "Luksemburg", "lv": "Ryga", "ly": "Trypolis", "ma": "Rabat", "mc": "Monako", "md": "Kiszyniów",
+    "me": "Podgorica", "mf": "Marigot", "mg": "Antananarywa", "mh": "Majuro", "mk": "Skopje", "ml": "Bamako",
+    "mm": "Naypyidaw", "mn": "Ułan Bator", "mp": "Saipan", "mq": "Fort-de-France", "mr": "Nawakszut",
+    "ms": "Plymouth", "mt": "Valletta", "mu": "Port Louis", "mv": "Male", "mw": "Lilongwe", "mx": "Meksyk",
+    "my": "Kuala Lumpur", "mz": "Maputo", "na": "Windhuk", "nc": "Numea", "ne": "Niamey", "nf": "Kingston",
+    "ng": "Abudża", "ni": "Managua", "nl": "Amsterdam", "no": "Oslo", "np": "Katmandu", "nr": "Yaren",
+    "nu": "Alofi", "nz": "Wellington", "om": "Maskat", "pa": "Panama", "pe": "Lima", "pf": "Papeete",
+    "pg": "Port Moresby", "ph": "Manila", "pk": "Islamabad", "pl": "Warszawa", "pm": "Saint-Pierre",
+    "pn": "Adamstown", "pr": "San Juan", "ps": "Ramallah", "pt": "Lizbona", "pw": "Ngerulmud",
+    "py": "Asunción", "qa": "Doha", "re": "Saint-Denis", "ro": "Bukareszt", "rs": "Belgrad", "ru": "Moskwa",
+    "rw": "Kigali", "sa": "Rijad", "sb": "Honiara", "sc": "Victoria", "sd": "Chartum", "se": "Sztokholm",
+    "sg": "Singapur", "sh": "Jamestown", "si": "Lublana", "sj": "Longyearbyen", "sk": "Bratysława",
+    "sl": "Freetown", "sm": "San Marino", "sn": "Dakar", "so": "Mogadiszu", "sr": "Paramaribo", "ss": "Dżuba",
+    "st": "São Tomé", "sv": "San Salvador", "sx": "Philipsburg", "sy": "Damaszek", "sz": "Lobamba",
+    "tc": "Cockburn Town", "td": "Ndżamena", "tg": "Lomé", "th": "Bangkok", "tj": "Duszanbe", "tk": "Fakaofo",
+    "tl": "Dili", "tm": "Aszchabad", "tn": "Tunis", "to": "Nukuʻalofa", "tr": "Ankara", "tt": "Port-of-Spain",
+    "tv": "Funafuti", "tw": "Tajpej", "tz": "Dodoma", "ua": "Kijów", "ug": "Kampala", "us": "Waszyngton",
+    "uy": "Montevideo", "uz": "Taszkent", "va": "Watykan", "vc": "Kingstown", "ve": "Caracas",
+    "vg": "Road Town", "vi": "Charlotte Amalie", "vn": "Hanoi", "vu": "Port Vila", "wf": "Mata Utu",
+    "ws": "Apia", "xk": "Prisztina", "ye": "Sana", "yt": "Mamoudzou",
+    "za": "Pretoria, Bloemfontein, Kapsztad", "zm": "Lusaka", "zw": "Harare",
+}
+
+
 # Kod ISO 3166-1 -> grupa kontynentu (zródło: flagi-panstw.pl/kontynent)
 CONTINENT_BY_CODE = {
     "ad": "europa", "ae": "azja", "af": "azja", "ag": "ameryka-polnocna", "ai": "ameryka-polnocna", "al": "europa",
@@ -136,6 +200,320 @@ CONTINENT_BY_CODE = {
     "vn": "azja", "vu": "australia", "wf": "australia", "ws": "australia", "ye": "azja", "yt": "afryka",
     "za": "afryka", "zm": "afryka", "zw": "afryka",
 }
+
+
+# --------------------------------------------------------------------------- #
+# Card back: shared layout + map rendering
+# --------------------------------------------------------------------------- #
+
+MAP_GEODATA = "ne_50m_admin_0_countries.geojson"
+MAP_CACHE_PX = 512
+BACK_BAND_MM = 5.2
+BACK_TOP_MM = 5.8
+BACK_GAP_MM = 2.0
+ARROW_MM = 3.2
+PT_TO_MM = 25.4 / 72.0
+INK = (0.10, 0.10, 0.12)
+MUTED = (0.34, 0.34, 0.38)
+LABEL = (0.62, 0.62, 0.65)
+SEA_RGB = (232, 241, 249)
+NEIGHBOUR_RGB = (217, 222, 228)
+MAP_BORDER_RGB = (255, 255, 255)
+
+_MAP_POLYS = {}
+
+
+def _merc_y(lat: float) -> float:
+    lat = max(-85.0, min(85.0, lat))
+    return math.degrees(math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)))
+
+
+def _ring_bbox(ring):
+    xs = [p[0] for p in ring]
+    ys = [p[1] for p in ring]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def _download(url: str, dest: Path, timeout: int = 120) -> None:
+    tmp = dest.with_suffix(dest.suffix + ".part")
+    req = urllib.request.Request(url, headers={"User-Agent": "make_flag_cards.py"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp, open(tmp, "wb") as fh:
+        while True:
+            chunk = resp.read(1 << 16)
+            if not chunk:
+                break
+            fh.write(chunk)
+    tmp.replace(dest)
+
+
+def _load_map_polys(geojson_path: Path) -> dict[str, list]:
+    key = str(geojson_path)
+    if key in _MAP_POLYS:
+        return _MAP_POLYS[key]
+    polys_by: dict[str, list] = {}
+    try:
+        gj = json.loads(Path(geojson_path).read_text(encoding="utf-8"))
+    except Exception:
+        _MAP_POLYS[key] = polys_by
+        return polys_by
+    for f in gj.get("features", []):
+        props = f.get("properties", {})
+        code = ""
+        for prop in ("ISO_A2", "ISO_A2_EH"):
+            val = (props.get(prop) or "").strip().lower()
+            if val and val != "-99":
+                code = val
+                break
+        geom = f.get("geometry")
+        if not code or not geom:
+            continue
+        if geom.get("type") == "Polygon":
+            polys = [geom["coordinates"]]
+        elif geom.get("type") == "MultiPolygon":
+            polys = geom["coordinates"]
+        else:
+            continue
+        polys_by.setdefault(code, []).extend(polys)
+    _MAP_POLYS[key] = polys_by
+    return polys_by
+
+
+def render_locator_map(code: str, fill_rgb, geojson_path: Path, px: int = 512):
+    """Small locator map: country in `fill_rgb`, neighbours in light grey."""
+    if Image is None:
+        return None
+    polys_by = _load_map_polys(geojson_path)
+    polys = polys_by.get(code)
+    if not polys:
+        return None
+    fill = tuple(int(round(c * 255)) for c in fill_rgb)
+
+    bbs = [_ring_bbox(p[0]) for p in polys]
+    main = max(range(len(polys)), key=lambda i: max(1e-9, (bbs[i][2] - bbs[i][0]) * (bbs[i][3] - bbs[i][1])))
+    mb = bbs[main]
+    mba = max(1e-9, (mb[2] - mb[0]) * (mb[3] - mb[1]))
+    cx_main = (mb[0] + mb[2]) / 2.0
+
+    kept = []
+    for i, poly in enumerate(polys):
+        bb = bbs[i]
+        shift = 360.0 * round((cx_main - (bb[0] + bb[2]) / 2.0) / 360.0)
+        dx = max(0.0, mb[0] - (bb[2] + shift), (bb[0] + shift) - mb[2])
+        dy = max(0.0, mb[1] - bb[3], bb[1] - mb[3])
+        if i == main or ((bb[2] - bb[0]) * (bb[3] - bb[1]) >= 0.01 * mba and dx <= 15 and dy <= 10):
+            kept.append((poly, shift))
+
+    xs, ys = [], []
+    for poly, shift in kept:
+        for ring in poly:
+            for lon, lat in ring:
+                xs.append(lon + shift)
+                ys.append(lat)
+    if not xs:
+        return None
+    lon0, lon1 = min(xs), max(xs)
+    lat0, lat1 = max(-84.0, min(ys)), min(84.0, max(ys))
+    latc = (lat0 + lat1) / 2.0
+    y0, y1 = _merc_y(lat0), _merc_y(lat1)
+    min_y = _merc_y(latc + 1.5) - _merc_y(latc - 1.5)
+    span = max(lon1 - lon0, 3.0, y1 - y0, min_y) * 1.12
+    cx = (lon0 + lon1) / 2.0
+    cy = (y0 + y1) / 2.0
+    vx0, vy1 = cx - span / 2.0, cy + span / 2.0
+
+    def P(lon, lat):
+        return ((lon - vx0) / span * px, (vy1 - _merc_y(lat)) / span * px)
+
+    img = Image.new("RGB", (px, px), SEA_RGB)
+    draw = ImageDraw.Draw(img)
+
+    def paint(poly, shift, fill_col, width):
+        pts = [P(lon + shift, lat) for lon, lat in poly[0]]
+        if len(pts) >= 3:
+            draw.polygon(pts, fill=fill_col)
+            if width:
+                draw.line(pts + [pts[0]], fill=MAP_BORDER_RGB, width=width)
+
+    border_w = max(1, px // 320)
+    for other, other_polys in polys_by.items():
+        if other == code:
+            continue
+        for poly in other_polys:
+            bb = _ring_bbox(poly[0])
+            shift = 360.0 * round((cx - (bb[0] + bb[2]) / 2.0) / 360.0)
+            if bb[2] + shift < vx0 - span or bb[0] + shift > vx0 + 2 * span:
+                continue
+            if _merc_y(bb[3]) < vy1 - span or _merc_y(bb[1]) > vy1 + span:
+                continue
+            paint(poly, shift, NEIGHBOUR_RGB, border_w)
+
+    target_pts = []
+    for poly, shift in kept:
+        for ring in poly:
+            for lon, lat in ring:
+                target_pts.append(P(lon + shift, lat))
+    if not target_pts:
+        return None
+
+    mask = Image.new("L", (px, px), 0)
+    mdraw = ImageDraw.Draw(mask)
+    for poly, shift in kept:
+        outer = [P(lon + shift, lat) for lon, lat in poly[0]]
+        if len(outer) >= 3:
+            mdraw.polygon(outer, fill=255)
+        for hole in poly[1:]:
+            hole_pts = [P(lon + shift, lat) for lon, lat in hole]
+            if len(hole_pts) >= 3:
+                mdraw.polygon(hole_pts, fill=0)
+    img.paste(fill, (0, 0), mask)
+
+    land_px = mask.histogram()[255]
+    if land_px < 0.004 * px * px:
+        # tiny/microstate or scattered atolls: draw locator dots
+        order = sorted(range(len(kept)),
+                       key=lambda i: (lambda bb: (bb[2] - bb[0]) * (bb[3] - bb[1]))(_ring_bbox(kept[i][0][0])),
+                       reverse=True)
+        r_out = max(5.0, 0.042 * px)
+        r_in = max(3.0, 0.030 * px)
+        for i in order[:12]:
+            poly, shift = kept[i]
+            pts = [P(lon + shift, lat) for lon, lat in poly[0]]
+            ccx = (min(p[0] for p in pts) + max(p[0] for p in pts)) / 2.0
+            ccy = (min(p[1] for p in pts) + max(p[1] for p in pts)) / 2.0
+            draw.ellipse([ccx - r_out, ccy - r_out, ccx + r_out, ccy + r_out], fill=(255, 255, 255))
+            draw.ellipse([ccx - r_in, ccy - r_in, ccx + r_in, ccy + r_in], fill=fill)
+    else:
+        for poly, shift in kept:
+            pts = [P(lon + shift, lat) for lon, lat in poly[0]]
+            if len(pts) >= 3:
+                draw.line(pts + [pts[0]], fill=MAP_BORDER_RGB, width=border_w)
+    return img
+
+
+def ensure_map_png(code: str, fill_rgb, map_dir: Path | None, geojson_path: Path,
+                   refresh: bool = False) -> Path | None:
+    if map_dir is None:
+        return None
+    hexc = "".join("%02x" % int(round(c * 255)) for c in fill_rgb)
+    path = map_dir / ("%s-%s-v3.png" % (code, hexc))
+    if path.exists() and not refresh:
+        return path
+    img = render_locator_map(code, fill_rgb, geojson_path, MAP_CACHE_PX)
+    if img is None:
+        return None
+    map_dir.mkdir(parents=True, exist_ok=True)
+    img.save(path)
+    return path
+
+
+def back_geometry(card_w: float, card_h: float, padding: float,
+                  has_map: bool, has_band: bool, has_top: bool):
+    ix, iy = padding, padding
+    iw, ih = card_w - 2.0 * padding, card_h - 2.0 * padding
+    band_h = max(3.4, min(BACK_BAND_MM, ih * 0.17)) if has_band else 0.0
+    top_h = min(BACK_TOP_MM, ih * 0.19) if has_top else 0.0
+    content_h = ih - top_h - band_h
+    map_size = 0.0
+    if has_map:
+        avail = content_h
+        map_size = max(0.0, min(avail, iw * 0.42))
+        if map_size < 7.0:
+            map_size = 0.0
+    text_x = ix + (map_size + BACK_GAP_MM if map_size else 0.0)
+    text_h = map_size if map_size else content_h
+    return {
+        "ix": ix, "iy": iy, "iw": iw, "ih": ih,
+        "band_h": band_h, "top_h": top_h,
+        "map": (ix, iy + top_h, map_size, map_size),
+        "text": (text_x, iy + top_h, ix + iw - text_x, text_h),
+        "band_y": iy + ih - band_h,
+    }
+
+
+def back_content(card, card_w, card_h, padding, measure, show_code, show_continent,
+                 map_path, show_arrow=True, show_capital=True):
+    """Return drawing primitives in card-local mm (y measured from the top)."""
+    mm_to_pt = 72.0 / 25.4
+    cont_key = card.continent if show_continent else None
+    cont_label, cont_color = (
+        CONTINENT_STYLE.get(cont_key, ("", (0.5, 0.5, 0.5))) if cont_key else ("", (0.5, 0.5, 0.5))
+    )
+    g = back_geometry(card_w, card_h, padding,
+                      has_map=map_path is not None,
+                      has_band=bool(cont_key),
+                      has_top=show_arrow or show_code)
+    items: list[tuple] = []
+
+    if cont_key:
+        items.append(("rect", g["ix"], g["band_y"], g["iw"], g["band_h"], cont_color))
+
+    if show_arrow or show_code:
+        top_y, top_h = g["iy"], g["top_h"]
+        if show_arrow:
+            ax = g["ix"]
+            ay = top_y + (top_h - ARROW_MM) / 2.0
+            items.append(("arrow", ax, ay, ARROW_MM, ARROW_MM, (0.36, 0.36, 0.40)))
+            size = min(4.6, max(3.2, ARROW_MM * 1.3))
+            items.append(("text", "góra flagi", ax + ARROW_MM + 0.9,
+                          top_y + top_h / 2.0 + size * PT_TO_MM * 0.34,
+                          size, LABEL, False, "left"))
+        if show_code:
+            size = min(6.5, max(4.0, card_h * 0.115))
+            items.append(("text", card.code.upper(), g["ix"] + g["iw"],
+                          top_y + top_h / 2.0 + size * PT_TO_MM * 0.34,
+                          size, LABEL, True, "right"))
+
+    if map_path is not None:
+        mx, my, mw, mh = g["map"]
+        items.append(("image", map_path, mx, my, mw, mh))
+
+    tx, ty, tw, th = g["text"]
+    cap_text = ("Stolica: " + CAPITALS_BY_CODE[card.code]) if (show_capital and card.code in CAPITALS_BY_CODE) else None
+    cap_lines: list[str] = []
+    cap_size = 0.0
+    if cap_text:
+        cap_start = min(5.8, max(3.8, card_h * 0.145))
+        cap_lines, cap_size = fit_text(cap_text, measure, tw * mm_to_pt,
+                                       2.3 * cap_start * LINE_SPACING, cap_start,
+                                       min_size=3.2)
+    gap = 1.3 if cap_lines else 0.0
+    cap_h = len(cap_lines) * cap_size * LINE_SPACING * PT_TO_MM
+    name_max_h = max(3.5, th - cap_h - gap)
+    name_start = min(card_h * 0.30, 16.0)
+    name_lines, name_size = fit_text(card.name, measure, tw * mm_to_pt,
+                                     name_max_h * mm_to_pt, name_start, min_size=3.8)
+
+    total = len(name_lines) * name_size * LINE_SPACING * PT_TO_MM + gap + cap_h
+    y = ty + max(0.0, (th - total) / 2.0)
+    for line in name_lines:
+        items.append(("text", line, tx + tw / 2.0, y + name_size * PT_TO_MM * 0.95,
+                      name_size, INK, True, "center"))
+        y += name_size * LINE_SPACING * PT_TO_MM
+    y += gap
+    for line in cap_lines:
+        items.append(("text", line, tx + tw / 2.0, y + cap_size * PT_TO_MM * 0.95,
+                      cap_size, MUTED, False, "center"))
+        y += cap_size * LINE_SPACING * PT_TO_MM
+
+    if cont_key:
+        size = min(7.0, max(3.6, g["band_h"] * 1.45))
+        items.append(("text", cont_label, g["ix"] + g["iw"] / 2.0,
+                      g["band_y"] + g["band_h"] / 2.0 + size * PT_TO_MM * 0.34,
+                      size, (1.0, 1.0, 1.0), True, "center"))
+    return items
+
+
+def arrow_polygon(x: float, y: float, w: float, h: float):
+    """Up arrow inside the box (x, y, w, h), y measured from the top."""
+    return [
+        (x + 0.34 * w, y + h),
+        (x + 0.34 * w, y + 0.45 * h),
+        (x, y + 0.45 * h),
+        (x + 0.5 * w, y),
+        (x + w, y + 0.45 * h),
+        (x + 0.66 * w, y + 0.45 * h),
+        (x + 0.66 * w, y + h),
+    ]
 
 
 # --------------------------------------------------------------------------- #
@@ -395,6 +773,86 @@ def fit_text(text: str, measure, max_width: float, max_height: float, start_size
 
 
 # --------------------------------------------------------------------------- #
+# Drawing primitives (shared by PDF and PNG output)
+# --------------------------------------------------------------------------- #
+
+
+def _cont_color(card, show_continent: bool = True):
+    return CONTINENT_STYLE.get(card.continent, ("", (0.5, 0.5, 0.5)))[1]
+
+
+def _draw_item_pdf(c, item, x_pt, y_pt, card_h_mm, font_name, bold_name):
+    from reportlab.lib.utils import ImageReader
+
+    kind = item[0]
+    if kind == "rect":
+        _, x, y, w, h, rgb = item
+        c.setFillColorRGB(*rgb)
+        c.rect(x_pt + x * MM, y_pt + (card_h_mm - y - h) * MM, w * MM, h * MM, stroke=0, fill=1)
+    elif kind == "text":
+        _, text, x, y, size, rgb, bold, anchor = item
+        c.setFillColorRGB(*rgb)
+        c.setFont(bold_name if bold else font_name, size)
+        px = x_pt + x * MM
+        py = y_pt + (card_h_mm - y) * MM
+        if anchor == "center":
+            c.drawCentredString(px, py, text)
+        elif anchor == "right":
+            c.drawRightString(px, py, text)
+        else:
+            c.drawString(px, py, text)
+    elif kind == "image":
+        _, path, x, y, w, h = item
+        c.drawImage(ImageReader(str(path)), x_pt + x * MM, y_pt + (card_h_mm - y - h) * MM,
+                    width=w * MM, height=h * MM, mask="auto")
+    elif kind == "arrow":
+        _, x, y, w, h, rgb = item
+        c.setFillColorRGB(*rgb)
+        pts = arrow_polygon(x, y, w, h)
+        p = c.beginPath()
+        p.moveTo(x_pt + pts[0][0] * MM, y_pt + (card_h_mm - pts[0][1]) * MM)
+        for px, py in pts[1:]:
+            p.lineTo(x_pt + px * MM, y_pt + (card_h_mm - py) * MM)
+        p.close()
+        c.drawPath(p, stroke=0, fill=1)
+
+
+def _draw_item_png(img, draw, item, px_per_mm, dpi, font_regular, font_bold):
+    kind = item[0]
+    if kind == "rect":
+        _, x, y, w, h, rgb = item
+        draw.rectangle([x * px_per_mm, y * px_per_mm, (x + w) * px_per_mm, (y + h) * px_per_mm],
+                       fill=tuple(int(round(v * 255)) for v in rgb))
+    elif kind == "text":
+        _, text, x, y, size, rgb, bold, anchor = item
+        font_path = font_bold if bold else font_regular
+        if font_path:
+            font = ImageFont.truetype(font_path, max(1, int(round(size * dpi / 72.0))))
+        else:
+            font = ImageFont.load_default()
+        ascent = font.getmetrics()[0]
+        xpx = x * px_per_mm
+        ypx = y * px_per_mm - ascent
+        width = font.getlength(text)
+        if anchor == "center":
+            xpx -= width / 2.0
+        elif anchor == "right":
+            xpx -= width
+        draw.text((xpx, ypx), text, font=font, fill=tuple(int(round(v * 255)) for v in rgb))
+    elif kind == "image":
+        _, path, x, y, w, h = item
+        tw = max(1, int(round(w * px_per_mm)))
+        th = max(1, int(round(h * px_per_mm)))
+        with Image.open(path) as src:
+            img.paste(src.convert("RGB").resize((tw, th), Image.LANCZOS),
+                      (int(round(x * px_per_mm)), int(round(y * px_per_mm))))
+    elif kind == "arrow":
+        _, x, y, w, h, rgb = item
+        pts = [(px * px_per_mm, py * px_per_mm) for px, py in arrow_polygon(x, y, w, h)]
+        draw.polygon(pts, fill=tuple(int(round(v * 255)) for v in rgb))
+
+
+# --------------------------------------------------------------------------- #
 # PDF output
 # --------------------------------------------------------------------------- #
 
@@ -411,11 +869,19 @@ def make_pdf(
     font_regular: str | None,
     font_bold: str | None,
     title: str,
+    map_dir: Path | None = None,
+    geojson_path: Path | None = None,
+    refresh_maps: bool = False,
+    show_arrow: bool = True,
+    show_capital: bool = True,
 ) -> int:
     from reportlab.lib.utils import ImageReader
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.pdfgen import canvas as pdfcanvas
+
+    if geojson_path is None:
+        geojson_path = Path(__file__).parent / MAP_GEODATA
 
     if font_regular and font_bold:
         pdfmetrics.registerFont(TTFont("CardSans", font_regular))
@@ -471,47 +937,13 @@ def make_pdf(
                     height=dh,
                 )
             else:
-                cont_key = card.continent if show_continent else None
-                cont_label, cont_color = (
-                    CONTINENT_STYLE.get(cont_key, ("", (0.5, 0.5, 0.5)))
-                    if cont_key
-                    else ("", (0.5, 0.5, 0.5))
-                )
-                band_h = BAND_HEIGHT_MM * MM if cont_key else 0.0
-                code_h = 9 * MM if show_code else 0.0
-
-                if cont_key:
-                    c.setFillColorRGB(*cont_color)
-                    c.rect(inner_x, inner_y, inner_w, band_h, stroke=0, fill=1)
-
-                text_bottom = inner_y + band_h
-                text_h = inner_h - band_h - code_h
-                start_size = min(grid.card_h * 0.30, grid.card_w * 0.13) * MM
-                lines, size = fit_text(card.name, measure, inner_w, text_h, start_size)
-                total = len(lines) * size * LINE_SPACING
-                ty = text_bottom + (text_h - total) / 2.0 + total - size
-                c.setFillColorRGB(*TEXT_COLOR)
-                c.setFont(bold_name, size)
-                for line in lines:
-                    tw = pdfmetrics.stringWidth(line, bold_name, size)
-                    c.drawString(inner_x + (inner_w - tw) / 2.0, ty, line)
-                    ty -= size * LINE_SPACING
-
-                if cont_key:
-                    band_size = min(8.0, band_h * 0.62)
-                    c.setFillColorRGB(1, 1, 1)
-                    c.setFont(bold_name, band_size)
-                    tw = pdfmetrics.stringWidth(cont_label, bold_name, band_size)
-                    c.drawString(
-                        inner_x + (inner_w - tw) / 2.0,
-                        inner_y + (band_h - band_size) / 2.0 + band_size * 0.22,
-                        cont_label,
-                    )
-
-                if show_code:
-                    c.setFillColorRGB(*CODE_COLOR)
-                    c.setFont(font_name, 6.5)
-                    c.drawString(inner_x, inner_y + inner_h - code_h, card.code.upper())
+                map_path = ensure_map_png(card.code, _cont_color(card, show_continent),
+                                          map_dir, geojson_path, refresh_maps) if map_dir else None
+                items = back_content(card, grid.card_w, grid.card_h, padding, measure,
+                                     show_code, show_continent, map_path,
+                                     show_arrow=show_arrow, show_capital=show_capital)
+                for item in items:
+                    _draw_item_pdf(c, item, x_pt, y_pt, grid.card_h, font_name, bold_name)
         c.showPage()
 
     c.save()
@@ -535,26 +967,32 @@ def make_card_pngs(
     show_continent: bool,
     font_regular: str | None,
     font_bold: str | None,
+    map_dir: Path | None = None,
+    geojson_path: Path | None = None,
+    refresh_maps: bool = False,
+    show_arrow: bool = True,
+    show_capital: bool = True,
 ) -> None:
-    from PIL import Image, ImageDraw, ImageFont
+    if Image is None:
+        raise SystemExit("Pillow jest wymagany do --emit png. Zainstaluj: pip install pillow")
+    if geojson_path is None:
+        geojson_path = Path(__file__).parent / MAP_GEODATA
 
     px_per_mm = dpi / 25.4
     W = int(round(card_w_mm * px_per_mm))
     H = int(round(card_h_mm * px_per_mm))
     pad = int(round(padding * px_per_mm))
-    band_h = int(round(BAND_HEIGHT_MM * px_per_mm))
     out_dir.mkdir(parents=True, exist_ok=True)
 
     def load(path: str | None, size: int):
         if path:
-            return ImageFont.truetype(path, size)
+            return ImageFont.truetype(path, max(1, int(round(size))))
         return ImageFont.load_default()
 
+    def measure(text: str, size: float) -> float:
+        return load(font_bold, size * dpi / 72.0).getlength(text) * 72.0 / dpi
+
     for card in cards:
-        cont_key = card.continent if show_continent else None
-        cont_label, cont_color = (
-            CONTINENT_STYLE.get(cont_key, ("", (128, 128, 128))) if cont_key else ("", (128, 128, 128))
-        )
         for side in ("front", "back"):
             img = Image.new("RGB", (W, H), "white")
             draw = ImageDraw.Draw(img)
@@ -577,53 +1015,13 @@ def make_card_pngs(
                     nh = max(1, int(src.height * scale))
                     img.paste(src.resize((nw, nh), Image.LANCZOS), ((W - nw) // 2, (H - nh) // 2))
             else:
-                # PIL liczy współrzędne od góry; pasek kontynentu ma być na dole karty
-                inner_x, inner_y = pad, pad
-                inner_w, inner_h = W - 2 * pad, H - 2 * pad
-                band_top = H - pad - band_h
-                if cont_key:
-                    draw.rectangle(
-                        [inner_x, band_top, inner_x + inner_w, band_top + band_h],
-                        fill=tuple(int(c * 255) for c in cont_color),
-                    )
-                code_h = int(0.075 * H) if show_code else 0
-                name_top = inner_y + code_h
-                name_bottom = band_top if cont_key else (H - pad)
-                name_h = name_bottom - name_top
-                max_w = inner_w
-                start_size = min(card_h_mm * 0.30, card_w_mm * 0.13) * px_per_mm
-
-                def pil_measure(text: str, s: float) -> float:
-                    return load(font_bold, max(1, int(round(s)))).getlength(text)
-
-                lines, size = fit_text(card.name, pil_measure, max_w, name_h, start_size, min_size=8)
-                total = len(lines) * size * LINE_SPACING
-                ty = name_top + (name_h - total) / 2.0
-                for line in lines:
-                    font = load(font_bold, int(size))
-                    tw = font.getlength(line)
-                    draw.text(((W - tw) / 2, ty), line, font=font, fill=(26, 26, 31))
-                    ty += size * LINE_SPACING
-
-                if cont_key:
-                    band_size = min(int(0.085 * H), int(band_h * 0.62))
-                    font = load(font_bold, band_size)
-                    ascent, descent = font.getmetrics()
-                    tw = font.getlength(cont_label)
-                    draw.text(
-                        ((W - tw) / 2, band_top + (band_h - (ascent + descent)) / 2.0),
-                        cont_label,
-                        font=font,
-                        fill=(255, 255, 255),
-                    )
-                if show_code:
-                    font = load(font_regular, int(0.065 * H))
-                    draw.text(
-                        (inner_x, inner_y),
-                        card.code.upper(),
-                        font=font,
-                        fill=(140, 140, 148),
-                    )
+                map_path = ensure_map_png(card.code, _cont_color(card, show_continent),
+                                          map_dir, geojson_path, refresh_maps) if map_dir else None
+                items = back_content(card, card_w_mm, card_h_mm, padding, measure,
+                                     show_code, show_continent, map_path,
+                                     show_arrow=show_arrow, show_capital=show_capital)
+                for item in items:
+                    _draw_item_png(img, draw, item, px_per_mm, dpi, font_regular, font_bold)
 
             draw.rectangle([0, 0, W - 1, H - 1], outline=(200, 200, 205), width=max(1, dpi // 300))
             img.save(out_dir / f"{card.code}_{side}.png", dpi=(dpi, dpi))
@@ -712,6 +1110,11 @@ def main() -> int:
     parser.add_argument("--dpi", type=int, default=300, help="Rozdzielcść kart PNG")
     parser.add_argument("--flag-width", type=int, default=640, help="Szerokość pobieranej flagi (px)")
     parser.add_argument("--show-code", action="store_true", help="Drukuj kod ISO na tyle karty")
+    parser.add_argument("--no-map", action="store_true", help="Nie drukuj mapki lokalizacyjnej na tyle karty")
+    parser.add_argument("--no-capital", action="store_true", help="Nie drukuj stolicy na tyle karty")
+    parser.add_argument("--no-arrow", action="store_true", help="Nie rysuj strzałki orientacji flagi")
+    parser.add_argument("--map-geo", default=None, help="Ścieżka do GeoJSON Natural Earth (domyślnie w katalogu skryptu)")
+    parser.add_argument("--refresh-maps", action="store_true", help="Przelicz mapki od nowa (ignoruj cache)")
     parser.add_argument("--no-continent", action="store_true", help="Nie drukuj kontynentu na tyle karty")
     parser.add_argument("--no-borders", action="store_true", help="Nie rysuj linii cięcia")
     parser.add_argument("--out", default="cards_out", help="Katalog wyjściowy")
@@ -722,6 +1125,10 @@ def main() -> int:
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     cache_dir = Path(args.cache_dir) if args.cache_dir else out_dir / ".flag-cache"
+    geojson_path = Path(args.map_geo) if args.map_geo else Path(__file__).parent / MAP_GEODATA
+    map_dir = None if args.no_map else cache_dir / "maps"
+    show_arrow = not args.no_arrow
+    show_capital = not args.no_capital
 
     font_regular = find_font(FONT_CANDIDATES_REGULAR)
     font_bold = find_font(FONT_CANDIDATES_BOLD)
@@ -745,6 +1152,24 @@ def main() -> int:
     if not codes:
         raise SystemExit("Nie udało się pobrać żadnej flagi.")
 
+    if map_dir is not None and not geojson_path.exists():
+        print("Pobieranie danych map (Natural Earth)…", file=sys.stderr)
+        try:
+            geojson_path.parent.mkdir(parents=True, exist_ok=True)
+            _download(MAP_GEO_URL, geojson_path)
+        except Exception as exc:
+            print(f"  ⚠ nie udało się pobrać map: {exc} – pomijam mapki", file=sys.stderr)
+            map_dir = None
+
+    if map_dir is not None and not args.dry_run:
+        missing = 0
+        for code in codes:
+            color = CONTINENT_STYLE.get(CONTINENT_BY_CODE.get(code, "inne"), ("", (0.5, 0.5, 0.5)))[1]
+            if ensure_map_png(code, color, map_dir, geojson_path, args.refresh_maps) is None:
+                missing += 1
+        done = len(codes) - missing
+        print(f"Mapy: {done}/{len(codes)}" + (f" (brak dla {missing})" if missing else ""), file=sys.stderr)
+
     card_w, card_h = args.card
     show_code = args.show_code
     show_continent = not args.no_continent
@@ -766,6 +1191,8 @@ def main() -> int:
             front_grid, "front", flag_paths, out_dir / f"karty_{paper}_przod.pdf",
             args.padding, show_code, show_continent, draw_borders, font_regular, font_bold,
             f"Karty flag {paper} - przód (flagi)",
+            map_dir=map_dir, geojson_path=geojson_path, refresh_maps=args.refresh_maps,
+            show_arrow=show_arrow, show_capital=show_capital,
         )
 
         variants = []
@@ -786,17 +1213,19 @@ def main() -> int:
                 back_grid, "back", flag_paths, out_dir / f"karty_{paper}_tyl_{label}.pdf",
                 args.padding, show_code, show_continent, draw_borders, font_regular, font_bold,
                 f"Karty flag {paper} - tył (nazwy), {label}",
+                map_dir=map_dir, geojson_path=geojson_path, refresh_maps=args.refresh_maps,
+                show_arrow=show_arrow, show_capital=show_capital,
             )
             print(f"  → {out_dir / f'karty_{paper}_przod.pdf'}", file=sys.stderr)
             print(f"  → {out_dir / f'karty_{paper}_tyl_{label}.pdf'}", file=sys.stderr)
 
         with open(out_dir / f"indeks_{paper}.csv", "w", newline="", encoding="utf-8") as fh:
             writer = csv.writer(fh)
-            writer.writerow(["arkusz", "wiersz", "kolumna", "kod", "nazwa", "kontynent"])
+            writer.writerow(["arkusz", "wiersz", "kolumna", "kod", "nazwa", "stolica", "kontynent"])
             for card in sorted(front_grid.cards, key=lambda c_: (c_.sheet, c_.row, c_.col)):
                 writer.writerow(
                     [card.sheet + 1, card.row + 1, card.col + 1, card.code, card.name,
-                     CONTINENT_STYLE.get(card.continent, ("",))[0]]
+                     CAPITALS_BY_CODE.get(card.code, ""), CONTINENT_STYLE.get(card.continent, ("",))[0]]
                 )
 
     if args.emit in ("png", "both"):
@@ -805,6 +1234,8 @@ def main() -> int:
         make_card_pngs(
             png_grid.cards, flag_paths, png_dir, card_w, card_h, args.dpi,
             args.padding, show_code, show_continent, font_regular, font_bold,
+            map_dir=map_dir, geojson_path=geojson_path, refresh_maps=args.refresh_maps,
+            show_arrow=show_arrow, show_capital=show_capital,
         )
         print(f"  → {png_dir}/", file=sys.stderr)
 
