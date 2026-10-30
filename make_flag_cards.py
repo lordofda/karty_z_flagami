@@ -1059,8 +1059,8 @@ def main() -> int:
         description="Generuje dwustronne karty z flagą (przód) i nazwą kraju po polsku (tył).",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--papers", nargs="+", default=["A4", "A3"], choices=list(PAPER_SIZES_MM))
-    parser.add_argument("--card", type=parse_size, default=(63.0, 40.0), help="Rozmiar karty w mm")
+    parser.add_argument("--papers", nargs="+", default=["A4"], choices=list(PAPER_SIZES_MM))
+    parser.add_argument("--card", type=parse_size, default=(50.0, 70.0), help="Rozmiar karty w mm")
     parser.add_argument("--margin", type=float, default=5.0, help="Minimalny margines arkusza (mm)")
     parser.add_argument("--padding", type=float, default=3.5, help="Odstęp flagi od krawędzi karty (mm)")
     parser.add_argument("--set", choices=["sovereign", "countries", "all"], default="sovereign")
