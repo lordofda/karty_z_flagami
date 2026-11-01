@@ -108,6 +108,50 @@ CONTINENT_STYLE = {
 }
 
 # Stolica (po polsku) - źródło: flagi-panstw.pl (strony krajów)
+# Language and currency (Polish names, max 2 languages)
+FACTS_BY_CODE: dict[str, str] = {}
+try:
+    _facts_path = Path(__file__).parent / "facts_lang_cur.json"
+    if _facts_path.exists():
+        FACTS_BY_CODE = json.loads(_facts_path.read_text(encoding="utf-8"))
+except Exception:
+    FACTS_BY_CODE = {}
+
+GEO_FACTS: dict[str, dict] = {}
+try:
+    _geo_path = Path(__file__).parent / "geo_facts.json"
+    if _geo_path.exists():
+        GEO_FACTS = json.loads(_geo_path.read_text(encoding="utf-8"))
+except Exception:
+    GEO_FACTS = {}
+
+def _fmt_num(n):
+    try:
+        n = int(round(float(n)))
+    except Exception:
+        return str(n)
+    if n >= 1_000_000_000:
+        return f"{n/1_000_000_000:.1f}".rstrip('0').rstrip('.') + " mld"
+    if n >= 1_000_000:
+        v = n/1_000_000
+        s = f"{v:.1f}".rstrip('0').rstrip('.')
+        return s + " mln"
+    if n >= 1000:
+        return f"{n:,}".replace(',', ' ')
+    return str(n)
+
+def _fmt_area(a):
+    try:
+        a = float(a)
+    except Exception:
+        return str(a)
+    if a < 1:
+        return f"{a:.2f}".rstrip('0').rstrip('.') + " km²"
+    if a < 1000:
+        return f"{a:.0f} km²"
+    return f"{_fmt_num(a)} km²"
+
+
 CAPITALS_BY_CODE = {
     "ad": "Andora", "ae": "Abu Zabi", "af": "Kabul", "ag": "St. John’s", "ai": "The Valley", "al": "Tirana",
     "am": "Erywań", "ao": "Luanda", "ar": "Buenos Aires", "as": "Pago Pago", "at": "Wiedeń", "au": "Canberra",
@@ -432,7 +476,7 @@ def back_geometry(card_w: float, card_h: float, padding: float,
 
 
 def back_content(card, card_w, card_h, padding, measure, show_code, show_continent,
-                 map_path, show_capital=True):
+                 map_path, show_capital=True, show_facts=True):
     """Return drawing primitives in card-local mm (y measured from the top)."""
     mm_to_pt = 72.0 / 25.4
     cont_key = card.continent if show_continent else None
@@ -460,11 +504,11 @@ def back_content(card, card_w, card_h, padding, measure, show_code, show_contine
         items.append(("image", map_path, mx, my, mw, mh))
 
     tx, ty, tw, th = g["text"]
-    cap_text = ("Stolica: " + CAPITALS_BY_CODE[card.code]) if (show_capital and card.code in CAPITALS_BY_CODE) else None
+    cap_text = CAPITALS_BY_CODE[card.code] if (show_capital and card.code in CAPITALS_BY_CODE) else None
     cap_lines: list[str] = []
     cap_size = 0.0
     if cap_text:
-        cap_start = min(5.8, max(3.8, card_h * 0.145))
+        cap_start = min(8.4, max(5.0, card_h * 0.19))
         cap_lines, cap_size = fit_text(cap_text, measure, tw * mm_to_pt,
                                        2.3 * cap_start * LINE_SPACING, cap_start,
                                        min_size=3.2)
@@ -487,8 +531,31 @@ def back_content(card, card_w, card_h, padding, measure, show_code, show_contine
                       cap_size, MUTED, False, "center"))
         y += cap_size * LINE_SPACING * PT_TO_MM
 
+    facts_lines = []
+    if show_facts and card.code in FACTS_BY_CODE:
+        facts_lines.append(FACTS_BY_CODE[card.code])
+    gf = GEO_FACTS.get(card.code)
+    if gf:
+        pop = gf.get('pop')
+        area = gf.get('area')
+        parts = []
+        if area is not None:
+            parts.append(_fmt_area(area))
+        if pop is not None:
+            parts.append(_fmt_num(pop))
+        if parts:
+            facts_lines.append(' • '.join(parts))
+    if facts_lines:
+        fsize = min(6.0, max(4.0, card_h * 0.13))
+        by = g["band_y"]
+        y = by - len(facts_lines) * fsize * LINE_SPACING * PT_TO_MM - fsize * PT_TO_MM * 0.3
+        for fl in facts_lines:
+            items.append(("text", fl, g["ix"] + g["iw"] / 2.0,
+                          y + fsize * PT_TO_MM * 0.95,
+                          fsize, (0.48, 0.48, 0.52), False, "center"))
+            y += fsize * LINE_SPACING * PT_TO_MM
     if cont_key:
-        size = min(7.0, max(3.6, g["band_h"] * 1.45))
+        size = min(8.2, max(4.2, g["band_h"] * 1.65))
         items.append(("text", cont_label, g["ix"] + g["iw"] / 2.0,
                       g["band_y"] + g["band_h"] / 2.0 + size * PT_TO_MM * 0.34,
                       size, (1.0, 1.0, 1.0), True, "center"))
@@ -838,6 +905,7 @@ def make_pdf(
     geojson_path: Path | None = None,
     refresh_maps: bool = False,
     show_capital: bool = True,
+    show_facts: bool = True,
 ) -> int:
     from reportlab.lib.utils import ImageReader
     from reportlab.pdfbase import pdfmetrics
@@ -905,7 +973,7 @@ def make_pdf(
                                           map_dir, geojson_path, refresh_maps) if map_dir else None
                 items = back_content(card, grid.card_w, grid.card_h, padding, measure,
                                      show_code, show_continent, map_path,
-                                     show_capital=show_capital)
+                                     show_capital=show_capital, show_facts=show_facts)
                 for item in items:
                     _draw_item_pdf(c, item, x_pt, y_pt, grid.card_h, font_name, bold_name)
         c.showPage()
@@ -935,6 +1003,7 @@ def make_card_pngs(
     geojson_path: Path | None = None,
     refresh_maps: bool = False,
     show_capital: bool = True,
+    show_facts: bool = True,
 ) -> None:
     if Image is None:
         raise SystemExit("Pillow jest wymagany do --emit png. Zainstaluj: pip install pillow")
@@ -1078,6 +1147,7 @@ def main() -> int:
     parser.add_argument("--map-geo", default=None, help="Ścieżka do GeoJSON Natural Earth (domyślnie w katalogu skryptu)")
     parser.add_argument("--refresh-maps", action="store_true", help="Przelicz mapki od nowa (ignoruj cache)")
     parser.add_argument("--no-continent", action="store_true", help="Nie drukuj kontynentu na tyle karty")
+    parser.add_argument("--no-facts", action="store_true", help="Nie drukuj języka/waluty na tyle karty")
     parser.add_argument("--no-borders", action="store_true", help="Nie rysuj linii cięcia")
     parser.add_argument("--out", default="cards_out", help="Katalog wyjściowy")
     parser.add_argument("--cache-dir", default=None, help="Katalog cache flag (domyślnie <out>/.flag-cache)")
@@ -1090,6 +1160,7 @@ def main() -> int:
     geojson_path = Path(args.map_geo) if args.map_geo else Path(__file__).parent / MAP_GEODATA
     map_dir = None if args.no_map else cache_dir / "maps"
     show_capital = not args.no_capital
+    show_facts = not args.no_facts
 
     font_regular = find_font(FONT_CANDIDATES_REGULAR)
     font_bold = find_font(FONT_CANDIDATES_BOLD)
@@ -1153,7 +1224,7 @@ def main() -> int:
             args.padding, show_code, show_continent, draw_borders, font_regular, font_bold,
             f"Karty flag {paper} - przód (flagi)",
             map_dir=map_dir, geojson_path=geojson_path, refresh_maps=args.refresh_maps,
-            show_capital=show_capital,
+            show_capital=show_capital, show_facts=show_facts,
         )
 
         variants = []
@@ -1196,7 +1267,7 @@ def main() -> int:
             png_grid.cards, flag_paths, png_dir, card_w, card_h, args.dpi,
             args.padding, show_code, show_continent, font_regular, font_bold,
             map_dir=map_dir, geojson_path=geojson_path, refresh_maps=args.refresh_maps,
-            show_capital=show_capital,
+            show_capital=show_capital, show_facts=show_facts,
         )
         print(f"  → {png_dir}/", file=sys.stderr)
 
