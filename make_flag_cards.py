@@ -361,7 +361,15 @@ def render_locator_map(code: str, fill_rgb, geojson_path: Path, px: int = 512):
     latc = (lat0 + lat1) / 2.0
     y0, y1 = _merc_y(lat0), _merc_y(lat1)
     min_y = _merc_y(latc + 1.5) - _merc_y(latc - 1.5)
-    span = max(lon1 - lon0, 3.0, y1 - y0, min_y) * 1.12
+    size_deg = max(lon1 - lon0, y1 - y0)
+    if size_deg > 60:
+        span = max(lon1 - lon0, 3.0, y1 - y0, min_y) * 1.4
+    elif size_deg > 30:
+        span = max(lon1 - lon0, 3.0, y1 - y0, min_y) * 1.8
+    elif size_deg > 10:
+        span = max(lon1 - lon0, 3.0, y1 - y0, min_y) * 2.2
+    else:
+        span = max(lon1 - lon0, 3.0, y1 - y0, min_y) * 3.5
     cx = (lon0 + lon1) / 2.0
     cy = (y0 + y1) / 2.0
     vx0, vy1 = cx - span / 2.0, cy + span / 2.0
@@ -440,7 +448,7 @@ def ensure_map_png(code: str, fill_rgb, map_dir: Path | None, geojson_path: Path
     if map_dir is None:
         return None
     hexc = "".join("%02x" % int(round(c * 255)) for c in fill_rgb)
-    path = map_dir / ("%s-%s-v4.png" % (code, hexc))
+    path = map_dir / ("%s-%s-v8.png" % (code, hexc))
     if path.exists() and not refresh:
         return path
     img = render_locator_map(code, fill_rgb, geojson_path, MAP_CACHE_PX)
@@ -546,7 +554,7 @@ def back_content(card, card_w, card_h, padding, measure, show_code, show_contine
         if parts:
             facts_lines.append(' • '.join(parts))
     if facts_lines:
-        fsize = min(6.0, max(4.0, card_h * 0.13))
+        fsize = min(8.4, max(5.0, card_h * 0.19))
         by = g["band_y"]
         y = by - len(facts_lines) * fsize * LINE_SPACING * PT_TO_MM - fsize * PT_TO_MM * 0.3
         for fl in facts_lines:

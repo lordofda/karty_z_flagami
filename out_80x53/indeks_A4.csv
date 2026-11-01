@@ -1,0 +1,196 @@
+arkusz,wiersz,kolumna,kod,nazwa,stolica,kontynent
+1,1,1,af,Afganistan,Kabul,Azja
+1,1,2,al,Albania,Tirana,Europa
+1,2,1,dz,Algieria,Algier,Afryka
+1,2,2,ad,Andora,Andora,Europa
+1,3,1,ao,Angola,Luanda,Afryka
+1,3,2,ag,Antigua i Barbuda,St. John’s,Ameryka Północna
+1,4,1,sa,Arabia Saudyjska,Rijad,Azja
+1,4,2,ar,Argentyna,Buenos Aires,Ameryka Południowa
+1,5,1,am,Armenia,Erywań,Azja
+1,5,2,au,Australia,Canberra,Australia i Oceania
+2,1,1,at,Austria,Wiedeń,Europa
+2,1,2,az,Azerbejdżan,Baku,Azja
+2,2,1,bs,Bahamy,Nassau,Ameryka Północna
+2,2,2,bh,Bahrajn,Manama,Azja
+2,3,1,bd,Bangladesz,Dhaka,Azja
+2,3,2,bb,Barbados,Bridgetown,Ameryka Północna
+2,4,1,be,Belgia,Bruksela,Europa
+2,4,2,bz,Belize,Belmopan,Ameryka Północna
+2,5,1,bj,Benin,Porto-Novo,Afryka
+2,5,2,bt,Bhutan,Thimphu,Azja
+3,1,1,by,Białoruś,Mińsk,Europa
+3,1,2,bo,Boliwia,Sucre,Ameryka Południowa
+3,2,1,ba,Bośnia i Hercegowina,Sarajewo,Europa
+3,2,2,bw,Botswana,Gaborone,Afryka
+3,3,1,br,Brazylia,Brasília,Ameryka Południowa
+3,3,2,bn,Brunei,Bandar Seri Begawan,Azja
+3,4,1,bg,Bułgaria,Sofia,Europa
+3,4,2,bf,Burkina Faso,Wagadugu,Afryka
+3,5,1,bi,Burundi,Gitega,Afryka
+3,5,2,cl,Chile,Santiago,Ameryka Południowa
+4,1,1,cn,Chiny,Pekin,Azja
+4,1,2,hr,Chorwacja,Zagrzeb,Europa
+4,2,1,cy,Cypr,Nikozja,Europa
+4,2,2,td,Czad,Ndżamena,Afryka
+4,3,1,me,Czarnogóra,Podgorica,Europa
+4,3,2,cz,Czechy,Praga,Europa
+4,4,1,dk,Dania,Kopenhaga,Europa
+4,4,2,cd,Demokratyczna Republika Konga,Kinszasa,Afryka
+4,5,1,dm,Dominika,Roseau,Ameryka Północna
+4,5,2,do,Dominikana,Santo Domingo,Ameryka Północna
+5,1,1,dj,Dżibuti,Dżibuti,Afryka
+5,1,2,eg,Egipt,Kair,Afryka
+5,2,1,ec,Ekwador,Quito,Ameryka Południowa
+5,2,2,er,Erytrea,Asmara,Afryka
+5,3,1,ee,Estonia,Tallinn,Europa
+5,3,2,et,Etiopia,Addis Abeba,Afryka
+5,4,1,fj,Fidżi,Suva,Australia i Oceania
+5,4,2,ph,Filipiny,Manila,Azja
+5,5,1,fi,Finlandia,Helsinki,Europa
+5,5,2,fr,Francja,Paryż,Europa
+6,1,1,ga,Gabon,Libreville,Afryka
+6,1,2,gm,Gambia,Bandżul,Afryka
+6,2,1,gh,Ghana,Akra,Afryka
+6,2,2,gr,Grecja,Ateny,Europa
+6,3,1,gd,Grenada,Saint George,Ameryka Północna
+6,3,2,ge,Gruzja,Tbilisi,Azja
+6,4,1,gy,Gujana,Georgetown,Ameryka Południowa
+6,4,2,gt,Gwatemala,Gwatemala,Ameryka Północna
+6,5,1,gn,Gwinea,Konakry,Afryka
+6,5,2,gw,Gwinea Bissau,Bissau,Afryka
+7,1,1,gq,Gwinea Równikowa,Malabo,Afryka
+7,1,2,ht,Haiti,Port-au-Prince,Ameryka Północna
+7,2,1,es,Hiszpania,Madryt,Europa
+7,2,2,nl,Holandia,Amsterdam,Europa
+7,3,1,in,Indie,Nowe Delhi,Azja
+7,3,2,id,Indonezja,Dżakarta,Australia i Oceania
+7,4,1,iq,Irak,Bagdad,Azja
+7,4,2,ir,Iran,Teheran,Azja
+7,5,1,ie,Irlandia,Dublin,Europa
+7,5,2,is,Islandia,Reykjavík,Europa
+8,1,1,il,Izrael,Jerozolima,Azja
+8,1,2,jm,Jamajka,Kingston,Ameryka Północna
+8,2,1,jp,Japonia,Tokio,Azja
+8,2,2,ye,Jemen,Sana,Azja
+8,3,1,jo,Jordania,Amman,Azja
+8,3,2,kh,Kambodża,Phnom Penh,Azja
+8,4,1,cm,Kamerun,Jaunde,Afryka
+8,4,2,ca,Kanada,Ottawa,Ameryka Północna
+8,5,1,qa,Katar,Doha,Azja
+8,5,2,kz,Kazachstan,Astana,Azja
+9,1,1,ke,Kenia,Nairobi,Afryka
+9,1,2,kg,Kirgistan,Biszkek,Azja
+9,2,1,ki,Kiribati,South Tarawa,Australia i Oceania
+9,2,2,co,Kolumbia,Bogota,Ameryka Południowa
+9,3,1,km,Komory,Moroni,Afryka
+9,3,2,cg,Kongo,Brazzaville,Afryka
+9,4,1,kr,Korea Południowa,Seul,Azja
+9,4,2,kp,Korea Północna,Pjongjang,Azja
+9,5,1,cr,Kostaryka,San Jose,Ameryka Północna
+9,5,2,cu,Kuba,Hawana,Ameryka Północna
+10,1,1,kw,Kuwejt,Kuwejt,Azja
+10,1,2,la,Laos,Wientian,Azja
+10,2,1,ls,Lesotho,Maseru,Afryka
+10,2,2,lb,Liban,Bejrut,Azja
+10,3,1,lr,Liberia,Monrovia,Afryka
+10,3,2,ly,Libia,Trypolis,Afryka
+10,4,1,li,Liechtenstein,Vaduz,Europa
+10,4,2,lt,Litwa,Wilno,Europa
+10,5,1,lu,Luksemburg,Luksemburg,Europa
+10,5,2,lv,Łotwa,Ryga,Europa
+11,1,1,mk,Macedonia Północna,Skopje,Europa
+11,1,2,mg,Madagaskar,Antananarywa,Afryka
+11,2,1,mw,Malawi,Lilongwe,Afryka
+11,2,2,mv,Malediwy,Male,Azja
+11,3,1,my,Malezja,Kuala Lumpur,Azja
+11,3,2,ml,Mali,Bamako,Afryka
+11,4,1,mt,Malta,Valletta,Europa
+11,4,2,ma,Maroko,Rabat,Afryka
+11,5,1,mr,Mauretania,Nawakszut,Afryka
+11,5,2,mu,Mauritius,Port Louis,Afryka
+12,1,1,mx,Meksyk,Meksyk,Ameryka Północna
+12,1,2,fm,Mikronezja,Palikir,Australia i Oceania
+12,2,1,mm,Mjanma,Naypyidaw,Azja
+12,2,2,md,Mołdawia,Kiszyniów,Europa
+12,3,1,mc,Monako,Monako,Europa
+12,3,2,mn,Mongolia,Ułan Bator,Azja
+12,4,1,ms,Montserrat,Plymouth,Ameryka Północna
+12,4,2,mz,Mozambik,Maputo,Afryka
+12,5,1,na,Namibia,Windhuk,Afryka
+12,5,2,nr,Nauru,Yaren,Australia i Oceania
+13,1,1,np,Nepal,Katmandu,Azja
+13,1,2,de,Niemcy,Berlin,Europa
+13,2,1,ne,Niger,Niamey,Afryka
+13,2,2,ng,Nigeria,Abudża,Afryka
+13,3,1,ni,Nikaragua,Managua,Ameryka Północna
+13,3,2,no,Norwegia,Oslo,Europa
+13,4,1,nz,Nowa Zelandia,Wellington,Australia i Oceania
+13,4,2,om,Oman,Maskat,Azja
+13,5,1,pk,Pakistan,Islamabad,Azja
+13,5,2,pw,Palau,Ngerulmud,Australia i Oceania
+14,1,1,ps,Palestyna,Ramallah,Azja
+14,1,2,pa,Panama,Panama,Ameryka Północna
+14,2,1,pg,Papua-Nowa Gwinea,Port Moresby,Australia i Oceania
+14,2,2,py,Paragwaj,Asunción,Ameryka Południowa
+14,3,1,pe,Peru,Lima,Ameryka Południowa
+14,3,2,pl,Polska,Warszawa,Europa
+14,4,1,za,Południowa Afryka,"Pretoria, Bloemfontein, Kapsztad",Afryka
+14,4,2,pt,Portugalia,Lizbona,Europa
+14,5,1,cf,Republika Środkowoafrykańska,Bangi,Afryka
+14,5,2,cv,Republika Zielonego Przylądka,Praia,Afryka
+15,1,1,ru,Rosja,Moskwa,Azja
+15,1,2,ro,Rumunia,Bukareszt,Europa
+15,2,1,rw,Rwanda,Kigali,Afryka
+15,2,2,kn,Saint Kitts i Nevis,Basseterre,Ameryka Północna
+15,3,1,lc,Saint Lucia,Castries,Ameryka Północna
+15,3,2,vc,Saint Vincent i Grenadyny,Kingstown,Ameryka Północna
+15,4,1,sv,Salwador,San Salvador,Ameryka Północna
+15,4,2,ws,Samoa,Apia,Australia i Oceania
+15,5,1,sm,San Marino,San Marino,Europa
+15,5,2,sn,Senegal,Dakar,Afryka
+16,1,1,rs,Serbia,Belgrad,Europa
+16,1,2,sc,Seszele,Victoria,Afryka
+16,2,1,sl,Sierra Leone,Freetown,Afryka
+16,2,2,sg,Singapur,Singapur,Azja
+16,3,1,sk,Słowacja,Bratysława,Europa
+16,3,2,si,Słowenia,Lublana,Europa
+16,4,1,so,Somalia,Mogadiszu,Afryka
+16,4,2,lk,Sri Lanka,Kolombo,Azja
+16,5,1,us,Stany Zjednoczone,Waszyngton,Ameryka Północna
+16,5,2,sz,Suazi,Lobamba,Afryka
+17,1,1,sd,Sudan,Chartum,Afryka
+17,1,2,ss,Sudan Południowy,Dżuba,Afryka
+17,2,1,sr,Surinam,Paramaribo,Ameryka Południowa
+17,2,2,sy,Syria,Damaszek,Azja
+17,3,1,ch,Szwajcaria,Berno,Europa
+17,3,2,se,Szwecja,Sztokholm,Europa
+17,4,1,tj,Tadżykistan,Duszanbe,Azja
+17,4,2,th,Tajlandia,Bangkok,Azja
+17,5,1,tz,Tanzania,Dodoma,Afryka
+17,5,2,tl,Timor Wschodni,Dili,Azja
+18,1,1,tg,Togo,Lomé,Afryka
+18,1,2,to,Tonga,Nukuʻalofa,Australia i Oceania
+18,2,1,tt,Trynidad i Tobago,Port-of-Spain,Ameryka Południowa
+18,2,2,tn,Tunezja,Tunis,Afryka
+18,3,1,tr,Turcja,Ankara,Azja
+18,3,2,tm,Turkmenistan,Aszchabad,Azja
+18,4,1,tv,Tuvalu,Funafuti,Australia i Oceania
+18,4,2,ug,Uganda,Kampala,Afryka
+18,5,1,ua,Ukraina,Kijów,Europa
+18,5,2,uy,Urugwaj,Montevideo,Ameryka Południowa
+19,1,1,uz,Uzbekistan,Taszkent,Azja
+19,1,2,vu,Vanuatu,Port Vila,Australia i Oceania
+19,2,1,va,Watykan,Watykan,Europa
+19,2,2,ve,Wenezuela,Caracas,Ameryka Południowa
+19,3,1,hu,Węgry,Budapeszt,Europa
+19,3,2,gb,Wielka Brytania (Zjednoczone Królestwo),Londyn,Europa
+19,4,1,vn,Wietnam,Hanoi,Azja
+19,4,2,it,Włochy,Rzym,Europa
+19,5,1,ci,Wybrzeże Kości Słoniowej,Jamusukro,Afryka
+19,5,2,mh,Wyspy Marshalla,Majuro,Australia i Oceania
+20,1,1,sb,Wyspy Salomona,Honiara,Australia i Oceania
+20,1,2,st,Wyspy Świętego Tomasza i Książęca,São Tomé,Afryka
+20,2,1,zm,Zambia,Lusaka,Afryka
+20,2,2,zw,Zimbabwe,Harare,Afryka
+20,3,1,ae,Zjednoczone Emiraty Arabskie,Abu Zabi,Azja
