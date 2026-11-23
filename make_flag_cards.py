@@ -945,6 +945,8 @@ def make_pdf(
         for card in (card for card in grid.cards if card.sheet == sheet):
             x_pt = card.x * MM
             y_pt = card.y * MM
+            if side == "back":
+                x_pt = x_pt - 0.8 * MM  # small left shift for duplex alignment
             w_pt = grid.card_w * MM
             h_pt = grid.card_h * MM
 
